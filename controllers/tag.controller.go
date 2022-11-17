@@ -7,8 +7,8 @@ import (
 )
 
 func TagGetAll(c *fiber.Ctx) error {
-	var tags []models.Tag
-	database.DB.Find(&tags)
+	var tags []models.TagResponseWithPost
+	database.DB.Preload("Posts").Find(&tags)
 	return c.JSON(fiber.Map{
 		"message": "ok",
 		"data":    tags,
