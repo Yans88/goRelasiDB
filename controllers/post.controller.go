@@ -8,7 +8,7 @@ import (
 
 func PostGetAll(c *fiber.Ctx) error {
 	var posts []models.Post
-	database.DB.Find(&posts)
+	database.DB.Preload("User").Find(&posts)
 	return c.JSON(fiber.Map{
 		"message": "ok",
 		"data":    posts,
@@ -25,17 +25,30 @@ func CreatePost(c *fiber.Ctx) error {
 	}
 	if post.Title == "" {
 		return c.Status(400).JSON(fiber.Map{
-			"message": "bad request, code is required",
+			"message": "bad request, title is required",
 			"data":    "",
 		})
 	}
-	if post.Body == "" {
+	if post.UserID == 0 {
 		return c.Status(400).JSON(fiber.Map{
 			"message": "bad request, user_id is required",
 			"data":    "",
 		})
 	}
+
+	if len(post.TagsID) == 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "bad request, tags_id is required",
+			"data":    "",
+		})
+	}
 	database.DB.Create(&post)
+	for _, tagID := range post.TagsID {
+		postTag := new(models.PostTag)
+		postTag.PostID = post.ID
+		postTag.TagID = tagID
+		database.DB.Create(&postTag)
+	}
 	return c.JSON(fiber.Map{
 		"message": "ok",
 		"data":    post,
